@@ -368,10 +368,6 @@ lemma hpr_\<nu>app: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t h1 \<tycolon> H1 \<hea
 lemma hdpr_\<nu>app: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t OBJ (h1,h2) \<tycolon> H1 \<^emph> H2 \<longmapsto> h1 \<tycolon> H1 \<heavy_asterisk> h2 \<tycolon> H2"
   unfolding Cast_def SepNu_to_SepSet by blast
 
-(* \<nu>processor pair_auto_dest 30 \<open>\<^bold>c\<^bold>u\<^bold>r\<^bold>r\<^bold>e\<^bold>n\<^bold>t blk \<^bold>r\<^bold>e\<^bold>s\<^bold>u\<^bold>l\<^bold>t\<^bold>s \<^bold>i\<^bold>n (R\<heavy_asterisk> (a,b) \<tycolon> (A \<nuFusion>' B) \<flower> W)\<close> \<open>fn ctx => fn meta => Scan.succeed (fn _ =>
-  meta |> NuBasics.apply_proc_naive @{thm dpr_auto_schema} |> NuSys.accept_proc ctx)\<close>
-\<nu>processor pair_auto_dest' 30 \<open>\<^bold>c\<^bold>u\<^bold>r\<^bold>r\<^bold>e\<^bold>n\<^bold>t blk \<^bold>r\<^bold>e\<^bold>s\<^bold>u\<^bold>l\<^bold>t\<^bold>s \<^bold>i\<^bold>n (R\<heavy_asterisk> (a,b) \<tycolon> (A \<nuFusion>' B))\<close> \<open>fn ctx => fn meta => Scan.succeed (fn _ =>
-  meta |> NuBasics.apply_proc_naive @{thm dpr_auto_schema'} |> NuSys.accept_proc ctx)\<close> *)
 
 subsubsection \<open>let & local_value\<close>
 
@@ -609,21 +605,6 @@ theorem op_equal[\<nu>overload =]:
 
 subsubsection \<open>Integer\<close>
 
-(* theorem const_nat_\<nu>app: "\<^bold>p\<^bold>r\<^bold>o\<^bold>c op_const_int TYPE('w::len) c \<blangle> R \<longmapsto> R \<heavy_asterisk> c \<tycolon> \<nat>['w] \<brangle>"
-  unfolding \<nu>def op_const_int_def apply (auto simp add: nu_exps) *)
-(* theorem const_nat_round_\<nu>app: "\<^bold>p\<^bold>r\<^bold>o\<^bold>c op_const_int TYPE('w::len) (of_nat n) \<blangle> R \<longmapsto> R \<heavy_asterisk> n \<tycolon> \<nat>\<^sup>r['w] \<brangle>"
-  unfolding \<nu>def op_const_int_def by auto *)
-
-(* schematic_goal "\<^bold>m\<^bold>a\<^bold>k\<^bold>e 3 \<^bold>b\<^bold>y \<^bold>p\<^bold>r\<^bold>o\<^bold>c ?f
-  \<blangle>\<flower_L>\<medium_left_bracket> A \<flower_L>\<flower>\<flower_R>X\<medium_right_bracket>\<flower_R>   \<longmapsto> ?T \<brangle>" by (rule \<nu>intro) *)
-
-(* instantiation typing :: (lrep, plus) plus begin
-definition plus_typing :: "('a,'b) typing \<Rightarrow> ('a,'b) typing \<Rightarrow> ('a,'b) typing"
-  where "nu_of a = nu_of b \<Longrightarrow> plus_typing a b = (case a of xa \<tycolon> Na \<Rightarrow> case b of xb \<tycolon> Nb \<Rightarrow> xa + xb \<tycolon> Na)"
-lemma [simp]: "(x \<tycolon> N) + (y \<tycolon> N) = (x + y \<tycolon> N)" using plus_typing_def by auto
-instance by standard
-end *)
-
 theorem add_nat_\<nu>app[\<nu>overload +]:
   "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x + y < 2^LENGTH('b::len) \<longrightarrow>
     \<^bold>p\<^bold>r\<^bold>o\<^bold>c op_add TYPE('b) \<blangle> x \<tycolon> \<nat>['b] \<heavy_asterisk> y \<tycolon> \<nat>['b] \<longmapsto> x + y \<tycolon> \<nat>['b] \<brangle>"
@@ -632,11 +613,6 @@ theorem add_nat_\<nu>app[\<nu>overload +]:
 theorem add_nat_round[\<nu>overload +]:
   "\<^bold>p\<^bold>r\<^bold>o\<^bold>c op_add TYPE('b) \<blangle> x \<tycolon> \<nat>\<^sup>r['b::len] \<heavy_asterisk> y \<tycolon> \<nat>\<^sup>r['b] \<longmapsto> (x + y) \<tycolon> \<nat>\<^sup>r['b] \<brangle>"
   unfolding op_add_def Procedure_def by (auto simp add: nu_exps)
-
-(* theorem add_nat_mod[\<nu>overload round_add]:
-    "\<^bold>p\<^bold>r\<^bold>o\<^bold>c op_add (LENGTH('b)) \<blangle>\<^bold>E\<^bold>N\<^bold>D \<RR> \<heavy_asterisk> y \<tycolon> \<nat>['b::len] \<heavy_asterisk> x \<tycolon> \<nat>['b] \<longmapsto> \<^bold>E\<^bold>N\<^bold>D \<RR> \<heavy_asterisk> ((x + y) mod 2^(LENGTH('b))) \<tycolon> \<nat>['b]  \<brangle>"
-  unfolding op_add_def Procedure_def by (auto simp add: unat_word_ariths)
-*)
 
 theorem sub_nat_\<nu>app[\<nu>overload -]:
     "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e y \<le> x \<longrightarrow>
@@ -850,9 +826,6 @@ lemma malloc_split: "Heap h \<Longrightarrow> P (heap_assignN n v (malloc h) Map
     unfolding heap_assignN_def using prems(1)
     by (simp add: map_add_def fun_eq_iff resource_key_forall disjoint_rewL memaddr_forall dom_def
           malloc option.case_eq_if) done
-
-(* lemma heap_assignN_subset: "Heap h \<Longrightarrow> h \<subseteq>\<^sub>m heap_assignN n v (malloc h) h"
-  unfolding heap_assignN_def map_le_def Ball_def by (simp add: malloc2 resource_key_forall memaddr_forall) *)
 
 lemma [intro]: "Heap h \<Longrightarrow> Heap (heap_assignN n v seg h)" proof -
   have "AvailableSegments h \<subseteq> {seg} \<union> AvailableSegments (heap_assignN n v seg h)"
