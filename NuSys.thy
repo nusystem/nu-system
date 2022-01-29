@@ -40,7 +40,6 @@ abbrevs
       and "<stack>" = "\<^bold>s\<^bold>t\<^bold>a\<^bold>c\<^bold>k"
       and "<dual>" = "\<^bold>d\<^bold>u\<^bold>a\<^bold>l"
       and "<when>" = "\<^bold>w\<^bold>h\<^bold>e\<^bold>n"
-      and "<intro>" = "\<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o"
       and "<dest>" = "\<^bold>d\<^bold>e\<^bold>s\<^bold>t"
       and "<try>" = "\<^bold>t\<^bold>r\<^bold>y"
   and "<get>" = "\<^bold>g\<^bold>e\<^bold>t"
@@ -301,15 +300,7 @@ datatype uniq_id = UNIQ_ID
   \<comment> \<open>A technical tag that is during the exporting translated to a unique ID.
     It is useful to generate unique name of anonymous functions.\<close>
 
-subsubsection \<open>Intro and Dest tag\<close>
-
-definition Intro :: " bool \<Rightarrow> bool " ("\<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o _" [12] 11) where "Intro P = P"
-definition Dest :: " bool \<Rightarrow> bool " ("\<^bold>d\<^bold>e\<^bold>s\<^bold>t _" [12] 11) where "Dest P = P"
-
-lemma Intro_D: "Intro P \<Longrightarrow> P" unfolding Intro_def .
-lemma Dest_D: "Dest P \<Longrightarrow> P" unfolding Dest_def .
-
-subsubsection \<open>Different tag\<close>
+subsubsection \<open>The Different Tag\<close>
 
 definition Different :: " 'a \<Rightarrow> 'b \<Rightarrow> bool " where "Different A B = True"
   \<comment> \<open>A premise that solved by automatic reasoning only if the term expressions of A and B
@@ -337,8 +328,12 @@ consts SimpleCast :: " 'a set \<Rightarrow> 'a set \<Rightarrow> bool \<Rightarr
 translations "(\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B)" == "(\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h CONST True)"
 
 definition CastDual :: " 'a set \<Rightarrow> 'a set \<Rightarrow> bool \<Rightarrow> 'b set \<Rightarrow> 'b set \<Rightarrow> bool " ("(2\<^bold>c\<^bold>a\<^bold>s\<^bold>t _/ \<longmapsto> _/ \<^bold>w\<^bold>i\<^bold>t\<^bold>h _/ \<^bold>d\<^bold>u\<^bold>a\<^bold>l _/ \<longmapsto> _)" [13,13,13,13] 12)
-  where "CastDual A B P A' B' \<longleftrightarrow> (\<forall>v. v \<in> A \<longrightarrow> v \<in> B \<and> P \<and> (\<forall>u. u \<in> A' \<longrightarrow> u \<in> B'))"
-  \<comment> \<open>Intuitively, \<^term>\<open>CastDual A B P A' B' \<longleftrightarrow> (\<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P) \<and> (Inhabited A \<longrightarrow> (\<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t A' \<longmapsto> B'))\<close>\<close>
+  where "CastDual A B P B' A' \<longleftrightarrow> (\<forall>v. v \<in> A \<longrightarrow> v \<in> B \<and> P \<and> (\<forall>u. u \<in> B' \<longrightarrow> u \<in> A'))"
+  \<comment> \<open>Intuitively, A pair of dual casts A B P B' A' is the one cast A to B to satisfy some constraints
+    usually to met the argument cells to be called and the dual one cast the return B' back to A',
+    if B' has some correspondence with B, e.g. of the same nu-type. Usually the change between
+    B and B' is to alter something of B like to change a field in B instead of destroying and creating
+    a totally new B' irrelevant with B.\<close>
 
 consts SimpCastDual :: " 'a set \<Rightarrow> 'a set \<Rightarrow> 'b set \<Rightarrow> 'b set \<Rightarrow> bool " ("(2\<^bold>c\<^bold>a\<^bold>s\<^bold>t _/ \<longmapsto> _/ \<^bold>d\<^bold>u\<^bold>a\<^bold>l _/ \<longmapsto> _)" [13,13,13] 12)
 translations
@@ -355,7 +350,7 @@ translations
 
 lemma cast_id[\<nu>reason 2000]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> A" unfolding Cast_def by fast
 lemma cast_dual_id[\<nu>reason 2000]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> A \<^bold>d\<^bold>u\<^bold>a\<^bold>l B \<longmapsto> B"
-  unfolding CastDual_def Intro_def Dest_def by (simp add: cast_id)
+  unfolding CastDual_def by (simp add: cast_id)
 
 lemma cast_id_ty[\<nu>reason 2200 on \<dots>]:
   "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x = y \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> T \<longmapsto> y \<tycolon> T" unfolding Cast_def by fast
@@ -364,28 +359,9 @@ lemma CastDual_I:
   "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t B' \<longmapsto> A' \<^bold>w\<^bold>i\<^bold>t\<^bold>h Any \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<^bold>d\<^bold>u\<^bold>a\<^bold>l B' \<longmapsto> A' "
   unfolding CastDual_def Cast_def by blast
 
-text \<open>There are 3 kinds of the Cast, corresponding 3 usages where the prefix `some_`
-means the variable *can* be schematic (which is unknown in the reasoning) while other variables
-are decided (non-schematic),
-  \<^item> \<^term>\<open>\<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t some_x \<tycolon> T \<longmapsto> some_y \<tycolon> some_U\<close>,
-  \<^item> \<^term>\<open>\<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t some_y \<tycolon> some_U \<longmapsto> some_x \<tycolon> T\<close>,
-  \<^item> \<^term>\<open>\<^bold>c\<^bold>a\<^bold>s\<^bold>t some_x \<tycolon> T \<longmapsto> some_y \<tycolon> U\<close>
-To illustrate, by @{thm cast_id} the reasoning on `cast x \<tycolon> T \<longmapsto> ?y \<tycolon> ?U` always results in trivial `cast x \<tycolon> T \<longmapsto> x \<tycolon> T`,
-  where as that on `dest cast x \<tycolon> T \<longmapsto> ?y \<tycolon> ?U` is meaningful by absence of that self-loop rule,
-  e.g. `dest cast x \<tycolon> T <where> P \<longmapsto> x \<tycolon> T with x \<in> P`.
-Actually, to prevent reasoning loop all the `dest cast` must constitute a DAG in the direct of destruction,
-  while `intro cast` is that of construction.
-\<close>
-
-lemma [\<nu>reason 30]: "\<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t B' \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h Any \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P"
-  unfolding Intro_def Cast_def by auto
-lemma [\<nu>reason 30 on \<open>\<^bold>c\<^bold>a\<^bold>s\<^bold>t ?A \<longmapsto> ?B \<^bold>w\<^bold>i\<^bold>t\<^bold>h ?P\<close>]:
-  "\<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> A' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P1 \<Longrightarrow> (P1 \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A' \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P2) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P1 \<and> P2"
-  unfolding Dest_def Cast_def by auto
-
 lemma [\<nu>reason 10]: \<comment> \<open>Fallback\<close>
   "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> A' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> A' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<^bold>d\<^bold>u\<^bold>a\<^bold>l C \<longmapsto> C"
-  unfolding Cast_def CastDual_def Premise_def Dest_def Intro_def by simp
+  unfolding Cast_def CastDual_def Premise_def by simp
 
 (* abbreviation SimpleCast :: " 'a set \<Rightarrow> 'a set \<Rightarrow> bool " ("(2\<^bold>c\<^bold>a\<^bold>s\<^bold>t _ \<longmapsto> _)" [2,14] 13)
   where "(\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B) \<equiv> (\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h True)" *)
@@ -397,12 +373,17 @@ lemma CastI[intro]: "Inhabited A \<Longrightarrow> A \<subseteq> B \<Longrightar
 lemma ie_\<nu>app: "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m x' \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x = x' \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> x' \<tycolon> N" unfolding Cast_def by auto
 lemma as_\<nu>app: "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m X' \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> \<tort_lbrace>X'\<tort_rbrace> \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> \<tort_lbrace>X'\<tort_rbrace>" .
 
-lemma cast_trans: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> (P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t B \<longmapsto> C \<^bold>w\<^bold>i\<^bold>t\<^bold>h Q) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> C \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<and> Q"
+lemma cast_trans:
+  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P
+    \<Longrightarrow> (P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t B \<longmapsto> C \<^bold>w\<^bold>i\<^bold>t\<^bold>h Q)
+    \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> C \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<and> Q"
   unfolding Cast_def by auto
+
 lemma cast_dual_trans: 
-  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P1 \<^bold>d\<^bold>u\<^bold>a\<^bold>l B' \<longmapsto> A' \<Longrightarrow> (P1 \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t B \<longmapsto> C \<^bold>w\<^bold>i\<^bold>t\<^bold>h P2 \<^bold>d\<^bold>u\<^bold>a\<^bold>l C' \<longmapsto> B')
+  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> B \<^bold>w\<^bold>i\<^bold>t\<^bold>h P1 \<^bold>d\<^bold>u\<^bold>a\<^bold>l B' \<longmapsto> A'
+    \<Longrightarrow> (P1 \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t B \<longmapsto> C \<^bold>w\<^bold>i\<^bold>t\<^bold>h P2 \<^bold>d\<^bold>u\<^bold>a\<^bold>l C' \<longmapsto> B')
     \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t A \<longmapsto> C \<^bold>w\<^bold>i\<^bold>t\<^bold>h P1 \<and> P2 \<^bold>d\<^bold>u\<^bold>a\<^bold>l C' \<longmapsto> A'"
-  unfolding Cast_def CastDual_def Intro_def Dest_def by auto
+  unfolding Cast_def CastDual_def by auto
 
 
 lemma cast_intro_frame:
@@ -436,7 +417,7 @@ subsubsection \<open>Auto tag\<close>
 
 definition Auto :: " 'a \<Rightarrow> 'a " where "Auto x = x"
 
-lemma [\<nu>reason]: "\<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> T \<longmapsto> x \<tycolon> Auto T" unfolding Auto_def Intro_def using cast_id .
+lemma [\<nu>reason]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t Y \<longmapsto> x \<tycolon> T \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t Y \<longmapsto> x \<tycolon> Auto T \<^bold>w\<^bold>i\<^bold>t\<^bold>h P" unfolding Auto_def .
 
 lemma Auto_cong: "\<tort_lbrace>x \<tycolon> T\<tort_rbrace> \<equiv> \<tort_lbrace>x' \<tycolon> T'\<tort_rbrace> \<Longrightarrow> \<tort_lbrace>x \<tycolon> Auto T\<tort_rbrace> \<equiv> \<tort_lbrace>x' \<tycolon> Auto T'\<tort_rbrace>" unfolding atomize_eq Auto_def .
 simproc_setup Auto_cong ("\<tort_lbrace>x \<tycolon> Auto T\<tort_rbrace>") = \<open>K (NuSimpCong.simproc @{thm Auto_cong})\<close>
@@ -523,54 +504,17 @@ subsection \<open>Miscellaneous\<close>
 
 subsubsection \<open>Finalization Rewrites\<close>
 
-named_theorems final_proc_rewrite \<open>rewrite the generated procedure theorem in the final stage\<close>
+named_theorems final_proc_rewrite
+  \<open>Rewrite the specification theorem in the end of the construction.
+    Theorems should be a meta equition \<^term>\<open>\<equiv>\<close>.\<close>
 
 lemma [final_proc_rewrite]: "f \<then> nop \<equiv> f" and [final_proc_rewrite]: "nop \<then> f \<equiv> f"
   unfolding instr_comp_def nop_def bind_def atomize_eq by auto
 
-(* lemmas [final_proc_rewrite] = WorkingProtector_def *)
 
 section \<open>Syntax\<close>
 
-subsection \<open>Syntax Helper\<close>
-
-ML \<open>
-fun parse_typing_ty (Type (\<^type_name>\<open>typing\<close>, [a,b])) = (b, a --> b --> \<^typ>\<open>bool\<close>)
-  | parse_typing_ty dummyT = (dummyT, dummyT)
-  | parse_typing_ty ty = raise TYPE ("should be a typing type", [ty], [])
-
-fun parse_typing (Free (name, ty)) =
-    Const (\<^const_syntax>\<open>typing\<close>, ty) $ Free (name^"\<^sub>x", fst (parse_typing_ty ty))
-        $ Free (name^"\<^sub>t\<^sub>y", snd (parse_typing_ty ty))
-  | parse_typing (Var ((name,ind), ty)) =
-    Const (\<^const_syntax>\<open>typing\<close>, ty) $ Var ((name^"\<^sub>x",ind), fst (parse_typing_ty ty))
-        $ Var ((name^"\<^sub>t\<^sub>y", ind), snd (parse_typing_ty ty))
-  | parse_typing (Const (\<^syntax_const>\<open>_constrain\<close>, ty) $ tm $ (Const (\<^type_syntax>\<open>typing\<close>, _) $ tya $ tyb)) =
-      let val (const $ tmx $ tmty) = parse_typing tm
-      in const $ (Const (\<^syntax_const>\<open>_constrain\<close>, ty) $ tmx $ tyb)
-        $ (Const (\<^syntax_const>\<open>_constrain\<close>, ty) $ tmty $ (Const (\<^type_syntax>\<open>\<nu>\<close>, dummyT) $ tya $ tyb)) end
-  | parse_typing (Const (\<^syntax_const>\<open>_constrain\<close>, ty) $ tm $ markup) =
-      let val (const $ tmx $ tmty) = parse_typing tm
-      in const $ (Const (\<^syntax_const>\<open>_constrain\<close>, ty) $ tmx $ markup)
-        $ (Const (\<^syntax_const>\<open>_constrain\<close>, ty) $ tmty $ markup) end
-  | parse_typing (tm as Const (\<^const_syntax>\<open>typing\<close>, _) $ _ $ _) = tm
-  | parse_typing tm = raise TERM ("should be a NuPrime.typing term", [tm])
-
-fun parse_typing_x tm = (case parse_typing tm of _ $ x $ _ => x)
-fun parse_typing_ty tm = (case parse_typing tm of _ $ _ $ ty => ty)
-\<close>
-
-syntax "_\<nu>typing" :: " logic \<Rightarrow> logic "
-  "_\<nu>typing_x" :: " logic \<Rightarrow> logic "
-  "_\<nu>typing_ty" :: " logic \<Rightarrow> logic "
-parse_translation \<open>[
-  (\<^syntax_const>\<open>_\<nu>typing\<close>, (fn _ => fn [tm] => parse_typing tm)),
-  (\<^syntax_const>\<open>_\<nu>typing_x\<close>, (fn _ => fn [tm] => parse_typing_x tm)),
-  (\<^syntax_const>\<open>_\<nu>typing_ty\<close>, (fn _ => fn [tm] => parse_typing_ty tm))
-]\<close>
-
-
-subsection \<open>Logical image models\<close>
+subsection \<open>Logical Image Models\<close>
 
 text \<open>A set of models having common meanings, useful for representing logical images\<close>
 
@@ -650,7 +594,6 @@ lemma [nu_exps]: "h \<nuLinkL> A \<^emph> B \<nuLinkR> (a,b) \<longleftrightarro
   (\<exists>h2 h1. h = h2 ++ h1 \<and> dom h2 \<perpendicular> dom h1 \<and> (h1 \<nuLinkL> A \<nuLinkR> a) \<and> (h2 \<nuLinkL> B \<nuLinkR> b))"
   unfolding HeapSeparation_def Refining_def by simp
 
-
 lemma SepNu_to_SepSet: "(OBJ (a,b) \<tycolon> A \<^emph> B) = (a \<tycolon> A \<heavy_asterisk> b \<tycolon> B)"
   by (simp add: nu_exps set_eq_iff) blast
 
@@ -664,9 +607,8 @@ lemma heap_split_by_addr_set: "P (h |` (MemAddress ` S)) (h |` (- (MemAddress ` 
   using heap_split_by_set .
 
 
-subsection \<open>Fusion and its derivatives\<close>
+subsection \<open>Fusion\<close>
 
-subsubsection \<open>Fusion\<close>
 
 definition Fusion :: "('a1,'b1) \<nu> \<Rightarrow> ('a2,'b2) \<nu> \<Rightarrow> ('a1 \<times> 'a2, 'b1 \<times> 'b2) \<nu>" (infixr "\<cross_product>" 70) 
   where "Fusion N M x = {(p1,p2). case x of (x1,x2) \<Rightarrow> (p1 \<nuLinkL> N \<nuLinkR> x1) \<and> (p2 \<nuLinkL> M \<nuLinkR> x2)}"
@@ -689,21 +631,18 @@ term "\<tort_lbrace> a \<tycolon> A\<tort_rbrace> " *)
 
 subsection \<open>Subjection : coheres additional proposition\<close>
 
-definition Subjection :: " 'p set \<Rightarrow> bool \<Rightarrow> 'p set " (infixl "\<and>\<^sup>s" 13) where " (T \<and>\<^sup>s P) = {p. p \<in> T \<and> P}"
-notation Subjection (infixl \<open>\<^bold>s\<^bold>u\<^bold>b\<^bold>j\<close> 13)
-translations "(x \<tycolon> T) \<and>\<^sup>s P" \<rightleftharpoons> "\<tort_lbrace>x \<tycolon> T\<tort_rbrace> \<and>\<^sup>s P"
-lemma [nu_exps]: "p \<in> (T \<and>\<^sup>s P) \<longleftrightarrow> p \<in> T \<and> P" unfolding Subjection_def by simp
+definition Subjection :: " 'p set \<Rightarrow> bool \<Rightarrow> 'p set " (infixl "\<^bold>s\<^bold>u\<^bold>b\<^bold>j" 13) where " (T \<^bold>s\<^bold>u\<^bold>b\<^bold>j P) = {p. p \<in> T \<and> P}"
+translations "(x \<tycolon> T) \<^bold>s\<^bold>u\<^bold>b\<^bold>j P" \<rightleftharpoons> "\<tort_lbrace>x \<tycolon> T\<tort_rbrace> \<^bold>s\<^bold>u\<^bold>b\<^bold>j P"
+lemma [nu_exps]: "p \<in> (T \<^bold>s\<^bold>u\<^bold>b\<^bold>j P) \<longleftrightarrow> p \<in> T \<and> P" unfolding Subjection_def by simp
 
-lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e P \<Longrightarrow> \<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> T \<longmapsto> (x \<tycolon> T) \<and>\<^sup>s P"
-  unfolding Intro_def Cast_def Premise_def by (simp add: nu_exps)
-lemma [\<nu>reason]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t T \<longmapsto> T' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> (P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e Q) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t T \<longmapsto> T' \<and>\<^sup>s Q \<^bold>w\<^bold>i\<^bold>t\<^bold>h P"
+lemma [\<nu>reason]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t T \<longmapsto> T' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> (P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e Q) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t T \<longmapsto> T' \<^bold>s\<^bold>u\<^bold>b\<^bold>j Q \<^bold>w\<^bold>i\<^bold>t\<^bold>h P"
   unfolding Cast_def Premise_def by (simp add: nu_exps)
 
-lemma [simp]: "(T \<and>\<^sup>s True) = T" unfolding Auto_def by (auto simp add: nu_exps)
+lemma [simp]: "(T \<^bold>s\<^bold>u\<^bold>b\<^bold>j True) = T" unfolding Auto_def by (auto simp add: nu_exps)
 lemma [simp,cast_simp]: "(R \<heavy_asterisk> (T \<^bold>s\<^bold>u\<^bold>b\<^bold>j P)) = (R \<heavy_asterisk> T \<^bold>s\<^bold>u\<^bold>b\<^bold>j P)"
   by (simp add: set_eq_iff nu_exps Separation_expn) blast
 
-lemma Subjection_simp_proc_arg[simp]: "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> T \<and>\<^sup>s P \<longmapsto> Y \<brangle> = (P \<longrightarrow> \<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> T \<longmapsto> Y \<brangle>)"
+lemma Subjection_simp_proc_arg[simp]: "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> T \<^bold>s\<^bold>u\<^bold>b\<^bold>j P \<longmapsto> Y \<brangle> = (P \<longrightarrow> \<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> T \<longmapsto> Y \<brangle>)"
   (* and Subjection_simp_func_arg[simp]: "\<^bold>f\<^bold>u\<^bold>n\<^bold>c f' \<blangle> T \<and>\<^sup>s P \<longmapsto> Y \<brangle> = (P \<longrightarrow> \<^bold>f\<^bold>u\<^bold>n\<^bold>c f' \<blangle> T \<longmapsto> Y \<brangle>)" *)
   unfolding Auto_def Procedure_def by (simp add: nu_exps LooseStateTy_expn') blast
 
@@ -711,7 +650,7 @@ lemma [simp]: "(\<^bold>c\<^bold>u\<^bold>r\<^bold>r\<^bold>e\<^bold>n\<^bold>t 
   unfolding CurrentConstruction_def Auto_def by (cases s) (simp_all add: nu_exps pair_All)
 lemma [simp]: "((\<^bold>c\<^bold>u\<^bold>r\<^bold>r\<^bold>e\<^bold>n\<^bold>t s [H] \<^bold>r\<^bold>e\<^bold>s\<^bold>u\<^bold>l\<^bold>t\<^bold>s \<^bold>i\<^bold>n T) \<and> B) \<and> C \<longleftrightarrow> (\<^bold>c\<^bold>u\<^bold>r\<^bold>r\<^bold>e\<^bold>n\<^bold>t s [H] \<^bold>r\<^bold>e\<^bold>s\<^bold>u\<^bold>l\<^bold>t\<^bold>s \<^bold>i\<^bold>n T) \<and> (B \<and> C)" by simp
 
-lemma subj_\<nu>app: "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t T \<longmapsto> \<^bold>( T \<and>\<^sup>s P \<^bold>)"
+lemma subj_\<nu>app: "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t T \<longmapsto> \<^bold>( T \<^bold>s\<^bold>u\<^bold>b\<^bold>j P \<^bold>)"
   unfolding Cast_def Premise_def Implicit_Protector_def by simp
 
 translations
@@ -727,6 +666,26 @@ notation ExSet (binder "\<exists>\<^sup>s" 10)
 translations "\<exists>* idts. x \<tycolon> T" \<rightleftharpoons> "\<exists>* idts. \<tort_lbrace>x \<tycolon> T\<tort_rbrace>"
 
 lemma [nu_exps]: "p \<in> ExSet S \<longleftrightarrow> (\<exists>c. p \<in> S c)" unfolding ExSet_def by simp
+
+syntax
+  "_SetcomprNu" :: "'a \<Rightarrow> idts \<Rightarrow> bool \<Rightarrow> 'a set"  ("_ \<^bold>s\<^bold>u\<^bold>b\<^bold>j/ _./ _ " [2,0,2] 2)
+
+translations
+  " X \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P " \<rightleftharpoons> "\<exists>* idts. X \<^bold>s\<^bold>u\<^bold>b\<^bold>j P"
+  " X \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P " <= " \<tort_lbrace> X \<tort_rbrace> \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P "
+  " X \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. CONST True " \<rightleftharpoons> "\<exists>* idts. X"
+
+translations
+  "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> a \<tycolon> A \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P \<longmapsto> B \<brangle>" \<rightleftharpoons> "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> CONST Ele \<tort_lbrace> a \<tycolon> A \<tort_rbrace> \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P \<longmapsto> B \<brangle>"
+  "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> A \<longmapsto> b \<tycolon> B \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. Q \<brangle>" \<rightleftharpoons> "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> A \<longmapsto> CONST Ele \<tort_lbrace> b \<tycolon> B \<tort_rbrace> \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. Q \<brangle>"
+
+text \<open>The set of \<nu>-type in an assertion like \<^term>\<open>\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> S x \<^bold>s\<^bold>u\<^bold>b\<^bold>j x. P x \<longmapsto> T x \<^bold>s\<^bold>u\<^bold>b\<^bold>j x. Q x \<brangle>\<close> is represented
+  by \<^const>\<open>ExSet\<close> and we show a \<nu>-type \<^term>\<open>S x \<^bold>s\<^bold>u\<^bold>b\<^bold>j x. P x\<close> represents actually all concrete values that
+  belongs to \<^term>\<open>S\<close> a set of \<nu>-types (i.e. the union of \<^term>\<open>S\<close>) by following lemma\<close>
+
+lemma " Union { S x |x. P x } = (S x \<^bold>s\<^bold>u\<^bold>b\<^bold>j x. P x) "
+  by (simp add: set_eq_iff nu_exps) blast
+
 
 lemma ExSet_pair: "ExSet T = (\<exists>*c1 c2. T (c1,c2) )" by (auto simp add: nu_exps)
 lemma named_ExSet: "(ExSet T) = (\<exists>*c. T (tag c) )" by (auto simp add: named_exists nu_exps)
@@ -744,29 +703,13 @@ lemma ExTyp_strip: "(\<^bold>c\<^bold>u\<^bold>r\<^bold>r\<^bold>e\<^bold>n\<^bo
 lemma [\<nu>reason 200]: "(\<And>c. \<^bold>c\<^bold>a\<^bold>s\<^bold>t T c \<longmapsto> T' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P c) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t (ExSet T) \<longmapsto> T' \<^bold>w\<^bold>i\<^bold>t\<^bold>h (\<exists>c. P c)"
   unfolding Cast_def by (simp add: nu_exps) blast
 
-lemma ExTyp_I_\<nu>app[\<nu>reason 20]: "\<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t T c \<longmapsto> (\<exists>*c. T c)"
-  unfolding Intro_def Cast_def by (simp add: nu_exps) blast
+lemma ExTyp_I_\<nu>app: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t T c \<longmapsto> (\<exists>*c. T c)"
+  unfolding Cast_def by (simp add: nu_exps) blast
 
 lemma generalize_\<nu>app:
   "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m c \<Longrightarrow> \<^bold>l\<^bold>a\<^bold>b\<^bold>e\<^bold>l name \<Longrightarrow> \<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e P c
     \<Longrightarrow> lambda_abstraction c (T' \<^bold>s\<^bold>u\<^bold>b\<^bold>j P c) name T \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t T' \<longmapsto> \<^bold>( ExSet T \<^bold>) "
   unfolding Cast_def Implicit_Protector_def lambda_abstraction_def by (auto simp add: nu_exps)
-
-syntax
-  "_SetcomprNu" :: "'a \<Rightarrow> idts \<Rightarrow> bool \<Rightarrow> 'a set"  ("_ \<^bold>s\<^bold>u\<^bold>b\<^bold>j/ _./ _ " [2,0,2] 2)
-
-translations
-  " X \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P " \<rightleftharpoons> "\<exists>* idts. X \<^bold>s\<^bold>u\<^bold>b\<^bold>j P"
-  " X \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P " <= " \<tort_lbrace> X \<tort_rbrace> \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P "
-  " X \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. CONST True " \<rightleftharpoons> "\<exists>* idts. X"
-
-translations
-  "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> a \<tycolon> A \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P \<longmapsto> B \<brangle>" \<rightleftharpoons> "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> CONST Ele \<tort_lbrace> a \<tycolon> A \<tort_rbrace> \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. P \<longmapsto> B \<brangle>"
-  "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> A \<longmapsto> b \<tycolon> B \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. Q \<brangle>" \<rightleftharpoons> "\<^bold>p\<^bold>r\<^bold>o\<^bold>c f \<blangle> A \<longmapsto> CONST Ele \<tort_lbrace> b \<tycolon> B \<tort_rbrace> \<^bold>s\<^bold>u\<^bold>b\<^bold>j idts. Q \<brangle>"
-
-
-lemma " Union { S x |x. P x } = (S x \<^bold>s\<^bold>u\<^bold>b\<^bold>j x. P x) "
-  by (simp add: set_eq_iff nu_exps) blast
 
 
 subsection \<open>Identity\<close>
@@ -774,40 +717,25 @@ subsection \<open>Identity\<close>
 definition Identity :: " ('a::lrep, 'a) \<nu> " where "Identity x = {x}"
 lemma [simp]: "p \<nuLinkL> Identity \<nuLinkR> x \<longleftrightarrow> p = x" unfolding Refining_def Identity_def by auto
 
+
 subsection \<open>Refinement\<close>
 
-definition NuRefine :: " ('a, 'b) \<nu> \<Rightarrow> 'b set \<Rightarrow> ('a, 'b) \<nu> " (infixl "\<nuRefine>" 80)
-  where "(N \<nuRefine> T) x = {p. (x \<in> T \<and>(p \<nuLinkL> N \<nuLinkR> x))}"
+definition NuRefine :: " ('a, 'b) \<nu> \<Rightarrow> 'b set \<Rightarrow> ('a, 'b) \<nu> " (infixl "<where>" 80)
+  where "(N <where> T) x = {p. (x \<in> T \<and>(p \<nuLinkL> N \<nuLinkR> x))}"
 
-notation NuRefine (infixl "<where>" 80)
+lemma [simp]: " p \<nuLinkL> N <where> P \<nuLinkR> x \<longleftrightarrow> x \<in> P \<and> ( p \<nuLinkL> N \<nuLinkR> x)" unfolding NuRefine_def Refining_def by simp
+lemma [elim,\<nu>elim]: " x \<ratio> N <where> P \<Longrightarrow> (x \<in> P \<Longrightarrow> x \<ratio> N \<Longrightarrow> C) \<Longrightarrow> C" unfolding Inhabited_def by (simp add: nu_exps)
 
-lemma [simp]: " p \<nuLinkL> N \<nuRefine> P \<nuLinkR> x \<longleftrightarrow> x \<in> P \<and> ( p \<nuLinkL> N \<nuLinkR> x)" unfolding NuRefine_def Refining_def by simp
-lemma [elim,\<nu>elim]: " x \<ratio> N \<nuRefine> P \<Longrightarrow> (x \<in> P \<Longrightarrow> x \<ratio> N \<Longrightarrow> C) \<Longrightarrow> C" unfolding Inhabited_def by (simp add: nu_exps)
-
-lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x \<in> S \<Longrightarrow> \<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> x \<tycolon> M <where> S"
-  unfolding Intro_def Cast_def by (simp add: nu_exps) blast
-lemma [\<nu>reason, \<nu>overload D]: "\<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M <where> S \<longmapsto> x \<tycolon> M \<^bold>w\<^bold>i\<^bold>t\<^bold>h x \<in> S"
-  unfolding Dest_def Cast_def by (simp add: nu_exps)
 lemma [\<nu>reason]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> x' \<tycolon> M' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x' \<in> S \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> x' \<tycolon> M' <where> S \<^bold>w\<^bold>i\<^bold>t\<^bold>h P"
   unfolding Cast_def by (simp add: nu_exps) blast
-lemma refine_\<nu>app: "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x \<in> P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> x \<tycolon> (N <where> P)"
+
+lemma [\<nu>reason 30 on \<open>\<^bold>c\<^bold>a\<^bold>s\<^bold>t ?x \<tycolon> ?T <where> ?S \<longmapsto> ?Y \<^bold>w\<^bold>i\<^bold>t\<^bold>h ?P''\<close>, \<nu>overload D]:
+  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> T \<longmapsto> Y \<^bold>w\<^bold>i\<^bold>t\<^bold>h P
+    \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> T <where> S \<longmapsto> Y \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<and> x \<in> S"
   unfolding Cast_def by (simp add: nu_exps) blast
 
-abbreviation AutoRefine (infixl "<auto-where>" 80)
-  where "AutoRefine N P \<equiv> Auto (NuRefine N P)"
-lemma [simp]:"\<tort_lbrace>x \<tycolon> T <auto-where> P \<tort_rbrace> = ((x \<tycolon> T) \<and>\<^sup>s (\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x \<in> P))"
-  unfolding Auto_def Premise_def by (auto simp add: nu_exps)
-
-lemma NuRefine_to_auto:"\<tort_lbrace>x \<tycolon> T <where> P \<tort_rbrace> = \<tort_lbrace>x \<tycolon> T <auto-where> P \<tort_rbrace>" unfolding Auto_def ..
-
-(* lemma [\<nu>intro]: "(x \<in> P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> Y \<^bold>w\<^bold>i\<^bold>t\<^bold>h Q) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<nuRefine> P \<longmapsto> Y \<^bold>w\<^bold>i\<^bold>t\<^bold>h Q \<and>x \<in> P" unfolding Cast_def by auto
-lemma [\<nu>intro]: " \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> y \<tycolon> M \<^bold>w\<^bold>i\<^bold>t\<^bold>h Q \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e y \<in> P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> y \<tycolon> M <where> P \<^bold>w\<^bold>i\<^bold>t\<^bold>h Q" unfolding Cast_def by auto
-(* lemma [\<nu>cast_overload E]: " \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> (N \<^bold>w\<^bold>h\<^bold>e\<^bold>r\<^bold>e P) \<longmapsto> x \<tycolon> N \<^bold>w\<^bold>i\<^bold>t\<^bold>h x \<in> P" unfolding Cast_def by auto *)
-*)
-lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e z \<in> S \<Longrightarrow> \<nu>Zero N z \<Longrightarrow> \<nu>Zero (N <where> S) z"
-  unfolding \<nu>Zero_def Premise_def by (simp add: nu_exps)
-lemma "\<nu>Equal (N <where> P) can_eq eq \<longleftrightarrow> \<nu>Equal N (\<lambda>x y. x \<in> P \<and> y \<in> P \<and> can_eq x y) eq"
-  unfolding \<nu>Equal_def by (simp add: nu_exps) blast
+lemma refine_\<nu>app: "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e x \<in> P \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> x \<tycolon> (N <where> P)"
+  unfolding Cast_def by (simp add: nu_exps) blast
 
 
 subsection \<open>Down Lifting\<close>
@@ -822,10 +750,10 @@ lemma [elim,\<nu>elim]: " x \<ratio> N <down-lift> g \<Longrightarrow> ( g x \<r
 (* lemma [\<nu>cast_overload E]: " \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N <down-lift> g \<longmapsto> g x \<tycolon> N" unfolding Cast_def by simp *)
 lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e g x = x' \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N <down-lift> g \<longmapsto> x' \<tycolon> N" unfolding Cast_def by (simp add: nu_exps) blast
 
-lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e (g y = x) \<Longrightarrow> \<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> y \<tycolon> M <down-lift> g"
+(* lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e (g y = x) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> y \<tycolon> M <down-lift> g"
   unfolding Intro_def Cast_def by (simp add: nu_exps) blast
 lemma [\<nu>reason, \<nu>overload D]: "\<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t y \<tycolon> M <down-lift> g \<longmapsto> g y \<tycolon> M"
-  unfolding Dest_def Cast_def by (simp add: nu_exps)
+  unfolding Dest_def Cast_def by (simp add: nu_exps) *)
 
 lemma [\<nu>reason]: " \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> y1 \<tycolon> M \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e y1 = g y  \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> y \<tycolon> M <down-lift> g"
   unfolding Cast_def by (simp add: nu_exps) blast
@@ -853,21 +781,20 @@ lemma "\<up>lift_\<nu>app": "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m g \<L
 (* lemma [\<nu>overload D]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M <up-lift> g \<longmapsto> (\<exists> \<tycolon> M) "
   unfolding Cast_def by (simp add: nu_exps) blast *)
 
-lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e y = g x \<Longrightarrow> \<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> y \<tycolon> M <up-lift> g"
-  unfolding Intro_def Cast_def by (simp add: nu_exps) blast
+(* lemma [\<nu>reason]: "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e y = g x \<Longrightarrow> \<^bold>i\<^bold>n\<^bold>t\<^bold>r\<^bold>o \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> y \<tycolon> M <up-lift> g"
+  unfolding Intro_def Cast_def by (simp add: nu_exps) blast *)
 lemma [\<nu>reason 130]: "\<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> x' \<tycolon> M' \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<Longrightarrow> \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e y = g x' \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> y \<tycolon> M' <up-lift> g"
   unfolding Cast_def by (simp add: nu_exps) blast
-(*lemma [\<nu>reason -30]: "(\<And> x. CaseSplit (y = g x) \<Longrightarrow> \<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> N \<^bold>w\<^bold>i\<^bold>t\<^bold>h P) \<Longrightarrow> \<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t y \<tycolon> M <up-lift> g \<longmapsto> N \<^bold>w\<^bold>i\<^bold>t\<^bold>h P"
-  unfolding Dest_def Cast_def CaseSplit_def by auto *)
+
 lemma [\<nu>reason 20]: "(\<And> x. y = g x \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> N \<^bold>w\<^bold>i\<^bold>t\<^bold>h P x) \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t y \<tycolon> M <up-lift> g \<longmapsto> N \<^bold>w\<^bold>i\<^bold>t\<^bold>h (\<exists>x. y = g x \<and> P x)"
-  unfolding Dest_def Cast_def by (simp add: nu_exps) blast
+  unfolding Cast_def by (simp add: nu_exps) blast
 lemma [\<nu>reason 150]:
   "(\<And> x. y = g x \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> M \<longmapsto> y' x \<tycolon> M' x \<^bold>w\<^bold>i\<^bold>t\<^bold>h P x)
     \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t y \<tycolon> M <up-lift> g \<longmapsto> (\<exists>*x. \<tort_lbrace>y' x \<tycolon> M' x\<tort_rbrace> ) \<^bold>w\<^bold>i\<^bold>t\<^bold>h (\<exists>x. y = g x \<and> P x)"
-  unfolding Dest_def Cast_def by (simp add: nu_exps) blast
+  unfolding Cast_def by (simp add: nu_exps) blast
 
-lemma "\<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t y \<tycolon> M <up-lift> g \<longmapsto> (\<exists>* x. (x \<tycolon> M) \<and>\<^sup>s g x = y)"
-  unfolding Dest_def Cast_def by (simp add: nu_exps) blast
+(* lemma "\<^bold>d\<^bold>e\<^bold>s\<^bold>t \<^bold>c\<^bold>a\<^bold>s\<^bold>t y \<tycolon> M <up-lift> g \<longmapsto> (\<exists>* x. (x \<tycolon> M) \<and>\<^sup>s g x = y)"
+  unfolding Dest_def Cast_def by (simp add: nu_exps) blast *)
 
 lemma "\<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> f x \<tycolon> N <up-lift> f" unfolding Cast_def by (simp add: nu_exps) blast
 lemma "\<^bold>c\<^bold>a\<^bold>s\<^bold>t x \<tycolon> N \<longmapsto> f x \<tycolon> N <up-lift> f" unfolding Cast_def by (simp add: nu_exps) blast
@@ -1227,13 +1154,13 @@ subsubsection \<open>Value\<close>
 lemma [\<nu>reason 2000 on \<open>\<medium_left_bracket> \<^bold>c\<^bold>a\<^bold>s\<^bold>t ?R \<heavy_asterisk> OBJ ?H \<longmapsto> ?R''' \<heavy_asterisk> \<medium_left_bracket> VAL ?X \<medium_right_bracket> \<^bold>w\<^bold>i\<^bold>t\<^bold>h ?P \<medium_right_bracket>: ?G\<close>]:
   "\<medium_left_bracket> \<^bold>c\<^bold>a\<^bold>s\<^bold>t R \<longmapsto> R' \<heavy_asterisk> \<medium_left_bracket> VAL X \<medium_right_bracket> \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<medium_right_bracket>: G
   \<Longrightarrow> \<medium_left_bracket> \<^bold>c\<^bold>a\<^bold>s\<^bold>t R \<heavy_asterisk> OBJ H \<longmapsto> R' \<heavy_asterisk> OBJ H \<heavy_asterisk> \<medium_left_bracket> VAL X \<medium_right_bracket> \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<medium_right_bracket>: G "
-  unfolding cast_def Intro_def Dest_def pair_forall
+  unfolding cast_def pair_forall
   by (smt (verit, ccfv_threshold) Separation_assoc Separation_comm(1) Separation_expn_R)
 
 lemma [\<nu>reason 2000 on \<open>\<medium_left_bracket> \<^bold>c\<^bold>a\<^bold>s\<^bold>t ?R \<heavy_asterisk> VAL ?V \<longmapsto> ?R''' \<heavy_asterisk> \<medium_left_bracket> VAL ?X \<medium_right_bracket> \<^bold>w\<^bold>i\<^bold>t\<^bold>h ?P \<medium_right_bracket>: ?G\<close>]:
   " \<^bold>c\<^bold>a\<^bold>s\<^bold>t V \<longmapsto> X \<^bold>w\<^bold>i\<^bold>t\<^bold>h P
   \<Longrightarrow> \<medium_left_bracket> \<^bold>c\<^bold>a\<^bold>s\<^bold>t R \<heavy_asterisk> VAL V \<longmapsto> R \<heavy_asterisk> \<medium_left_bracket> VAL X \<medium_right_bracket> \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<medium_right_bracket>: G"
-  unfolding cast_def Intro_def Dest_def pair_forall
+  unfolding cast_def pair_forall
   by (metis Separation_expn_V')
 
 lemma [\<nu>reason 2000 on \<open>\<medium_left_bracket> \<^bold>c\<^bold>a\<^bold>s\<^bold>t ?R \<longmapsto> \<medium_left_bracket> ?R2 \<heavy_asterisk> VAL ?X \<medium_right_bracket> \<^bold>w\<^bold>i\<^bold>t\<^bold>h ?P \<medium_right_bracket>: ?G\<close>]:
@@ -1569,7 +1496,7 @@ lemma cast_whole_\<nu>app:
   unfolding Cast_def Argument_def by (simp add: nu_exps)
 
 
-lemma cast_conversion:
+  lemma cast_conversion:
   "\<medium_left_bracket> \<^bold>c\<^bold>a\<^bold>s\<^bold>t R \<longmapsto> T \<^bold>w\<^bold>i\<^bold>t\<^bold>h Q \<medium_right_bracket>
   \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t T \<longmapsto> U \<^bold>w\<^bold>i\<^bold>t\<^bold>h P
   \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t R \<longmapsto> U \<^bold>w\<^bold>i\<^bold>t\<^bold>h P \<and> Q"
@@ -2060,7 +1987,7 @@ lemma [\<nu>reason 2000]: "SameNuTy A A' \<Longrightarrow> SameNuTy B B' \<Longr
 lemma [\<nu>reason 2000]: "(\<And>x. SameNuTy (A x) (A' x)) \<Longrightarrow> SameNuTy (ExSet A) (ExSet A')"
   unfolding SameNuTy_def ..
 
-lemma [\<nu>reason 2000]: "SameNuTy A A' \<Longrightarrow> SameNuTy (A \<and>\<^sup>s P) (A' \<and>\<^sup>s P)"
+lemma [\<nu>reason 2000]: "SameNuTy A A' \<Longrightarrow> SameNuTy (A \<^bold>s\<^bold>u\<^bold>b\<^bold>j P) (A' \<^bold>s\<^bold>u\<^bold>b\<^bold>j P)"
   unfolding SameNuTy_def ..
 
 lemma [\<nu>reason 1000]: "SameNuTy A A" \<comment> \<open>The fallback\<close>
