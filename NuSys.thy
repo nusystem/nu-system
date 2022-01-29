@@ -525,7 +525,7 @@ subsubsection \<open>Finalization Rewrites\<close>
 
 named_theorems final_proc_rewrite \<open>rewrite the generated procedure theorem in the final stage\<close>
 
-lemma [final_proc_rewrite]: "f \<nuInstrComp> nop \<equiv> f" and [final_proc_rewrite]: "nop \<nuInstrComp> f \<equiv> f"
+lemma [final_proc_rewrite]: "f \<then> nop \<equiv> f" and [final_proc_rewrite]: "nop \<then> f \<equiv> f"
   unfolding instr_comp_def nop_def bind_def atomize_eq by auto
 
 (* lemmas [final_proc_rewrite] = WorkingProtector_def *)
