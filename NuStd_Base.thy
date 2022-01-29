@@ -420,6 +420,15 @@ subsubsection \<open>if\<close>
 
 declare op_if_def[\<nu>instr]
 
+lemma "__if_rule__":
+  "\<^bold>p\<^bold>r\<^bold>o\<^bold>c cond \<blangle> X \<longmapsto> X \<heavy_asterisk> P \<tycolon> \<bool> \<brangle>
+    \<longrightarrow>\<^bold>p\<^bold>r\<^bold>o\<^bold>c branch_true \<blangle> X \<^bold>s\<^bold>u\<^bold>b\<^bold>j P \<longmapsto> Y\<^sub>T \<brangle>
+    \<longrightarrow> \<^bold>p\<^bold>r\<^bold>o\<^bold>c branch_false \<blangle> X \<^bold>s\<^bold>u\<^bold>b\<^bold>j \<not> P \<longmapsto> Y\<^sub>F \<brangle>
+    \<longrightarrow> \<^bold>p\<^bold>r\<^bold>o\<^bold>c (cond \<then> op_if TYPE('y::stack) branch_true branch_false) \<blangle> X \<longmapsto> If P Y\<^sub>T Y\<^sub>F \<brangle>"
+  unfolding \<nu>def op_if_def Conv_def Merge_def instr_comp_def bind_def
+  by (auto 0 4 simp add: nu_exps pair_forall)
+
+
 lemma if_\<nu>app:
   "(cond \<longrightarrow> \<^bold>p\<^bold>r\<^bold>o\<^bold>c branch_true \<blangle> X \<longmapsto> Y\<^sub>T \<brangle>)
     \<longrightarrow> (\<not> cond \<longrightarrow> \<^bold>p\<^bold>r\<^bold>o\<^bold>c branch_false \<blangle> X \<longmapsto> Y\<^sub>F \<brangle>)
