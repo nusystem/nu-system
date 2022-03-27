@@ -380,7 +380,7 @@ end
 
 section \<open>Tuple\<close>
 
-datatype 'a tuple = Tuple (dest_tuple: "('a::field_list)")
+datatype 'a tuple = Tuple (dest_tuple: "('a::field)")
 
 lemma tuple_exists[lrep_exps]: "Ex P \<longleftrightarrow> (\<exists>x. P (Tuple x))" by (metis tuple.exhaust) 
 lemma tuple_forall[lrep_exps]: "All P \<longleftrightarrow> (\<forall>x. P (Tuple x))" by (metis tuple.exhaust) 
@@ -389,7 +389,7 @@ subsection \<open>Lrep instantiations\<close>
 
 subsubsection \<open>lrep\<close>
 
-instantiation tuple :: (field_list) lrep begin
+instantiation tuple :: (field) lrep begin
 definition llty_tuple :: " 'a tuple itself \<Rightarrow> llty " where [simp, \<nu>reason]: "llty_tuple _ = llty_tup (llty TYPE('a))"
 definition deepize_tuple :: " 'a tuple \<Rightarrow> value " where "deepize_tuple x = DM_record (deepize (case_tuple id x))"
 definition shallowize_tuple :: " value \<Rightarrow> 'a tuple " where "shallowize_tuple x = (case x of DM_record y \<Rightarrow> Tuple (shallowize y))"
@@ -398,14 +398,14 @@ end
 
 subsubsection \<open>zero\<close>
 
-instantiation tuple :: ("{zero,field_list}") zero begin
+instantiation tuple :: ("{zero,field}") zero begin
 definition zero_tuple :: " 'a tuple " where [simp]: "zero_tuple = Tuple 0"
 instance by standard
 end
 
 subsubsection \<open>ceq\<close>
 
-instantiation tuple :: ("{ceq,field_list}") ceq begin
+instantiation tuple :: ("{ceq,field}") ceq begin
 definition ceqable_tuple :: " heap \<Rightarrow> 'a tuple \<Rightarrow> 'a tuple \<Rightarrow> bool " where "ceqable_tuple heap = rel_tuple (ceqable heap)"
 definition ceq_tuple :: " 'a tuple \<Rightarrow> 'a tuple \<Rightarrow> bool " where "ceq_tuple = rel_tuple ceq"
 lemma [simp]: "ceqable heap (Tuple a) (Tuple b) = ceqable heap a b" unfolding ceqable_tuple_def by simp
@@ -421,12 +421,12 @@ end
 
 subsubsection \<open>miscellaneous\<close>
 
-instantiation tuple :: (field_list) field begin instance by standard end
-instantiation tuple :: (field_list) field_list begin instance by standard end
+instantiation tuple :: (field) field begin instance by standard end
+instantiation tuple :: (field) field_list begin instance by standard end
 
 subsection \<open>Nu abstraction - `NuTuple`\<close>
 
-definition NuTuple :: "(('a::field_list), 'b) \<nu> \<Rightarrow> ('a tuple, 'b) \<nu>" ("\<lbrace> _ \<rbrace>") where "\<lbrace> N \<rbrace> x = { Tuple p | p. p \<nuLinkL> N \<nuLinkR> x}"
+definition NuTuple :: "(('a::field), 'b) \<nu> \<Rightarrow> ('a tuple, 'b) \<nu>" ("\<lbrace> _ \<rbrace>") where "\<lbrace> N \<rbrace> x = { Tuple p | p. p \<nuLinkL> N \<nuLinkR> x}"
 
 lemma [simp]: "Tuple p \<nuLinkL> \<lbrace> N \<rbrace> \<nuLinkR> x \<longleftrightarrow> p \<nuLinkL> N \<nuLinkR> x" by (simp add: lrep_exps NuTuple_def Refining_def)
 lemma [elim,\<nu>elim]: "x \<ratio> \<lbrace> N \<rbrace> \<Longrightarrow> (x \<ratio> N \<Longrightarrow> C) \<Longrightarrow> C" unfolding Inhabited_def tuple_exists by (simp add: nu_exps)
@@ -436,7 +436,7 @@ lemma [\<nu>reason]: "\<nu>Zero N z \<Longrightarrow> \<nu>Zero \<lbrace> N \<rb
 
 subsubsection \<open>Index\<close>
 
-definition index_tuple :: "('a,'b,'x,'y) index \<Rightarrow> ('a::field_list tuple, 'b::field_list tuple, 'x, 'y) index"
+definition index_tuple :: "('a,'b,'x,'y) index \<Rightarrow> ('a::field tuple, 'b::field_list tuple, 'x, 'y) index"
   where "index_tuple idx = (case idx of Index g m \<Rightarrow> Index (g o dest_tuple) (map_tuple o m))"
 
 lemma [\<nu>reason]: "\<^bold>i\<^bold>n\<^bold>d\<^bold>e\<^bold>x idx \<blangle> X \<^bold>@ a \<tycolon> A \<brangle> \<Longrightarrow> \<^bold>i\<^bold>n\<^bold>d\<^bold>e\<^bold>x index_tuple idx \<blangle> X \<^bold>@ a \<tycolon> \<lbrace> A \<rbrace> \<brangle>"

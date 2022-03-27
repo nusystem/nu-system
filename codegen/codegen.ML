@@ -72,6 +72,7 @@ signature NU_CG = sig
   val put_idx  : int list -> ctxt -> ctxt
   val put_idx' : int list -> ctxt -> ctxt
   val expr_idx  : int list -> (ctxt -> ctxt) -> ctxt -> ctxt
+  val expr_idx_t  : int list -> (ctxt -> ctxt) -> ctxt -> ctxt
   val expr_idx' : int list -> (ctxt -> ctxt) -> ctxt -> ctxt
   val op_get_tuple_gen : int list -> llty -> ctxt -> ctxt
   val op_set_tuple_gen : int list -> llty -> llty -> ctxt -> ctxt
@@ -127,7 +128,7 @@ fun basic_block m f (s,out,(cnt,lcnt,bb,ftab)) = f bb (s,out,(cnt,lcnt,m bb,ftab
 val get_bb = basic_block I;   fun set_bb i = basic_block (K i) (K I)
 fun put_bb i = put ("L" ^ string_of_int i ^ ":\n") #> set_bb i
 
-val size_t = 32; val SizeT = T_int size_t
+val size_t = 64; val SizeT = T_int size_t
 
 fun print f (_,out,(_,_,_,ftab)) = (List.app (f o rev o snd) (Symtab.dest ftab); f (rev out))
 fun debug s (c:ctxt) = (tracing s; print (tracing o String.concat) c; @{print} c)
@@ -200,6 +201,7 @@ val trunc_tail = map_ssa (fn (A <*> R) => A)  ;  val mk_tail = map_ssa (fn S => 
 val put_idx  = fold_rev (fn i => put ", "     #> put (string_of_int i))
 val put_idx' = fold_rev (fn i => put ", i32 " #> put (string_of_int i))
 fun expr_idx idx G = expr (G #> put_idx idx);    fun expr_idx' idx G = G #> put_idx idx
+fun expr_idx_t idx G = expr (G #> put_idx' idx)
 
 fun op_get_tuple_gen idx T = monop' (expr_idx idx) "extractvalue " (T_tup T)
 fun op_set_tuple_gen idx T = binop' (expr_idx idx) "insertvalue "  (T_tup T)
@@ -241,8 +243,10 @@ fun def_func name arg ret gen (c as (_,_,(_,_,_,ftab))) =
   if Symtab.defined ftab name then (name,c) else (name, funtab (gen_func name arg ret gen) (K I) c)
 
 
-fun output_list file txts = List.app (fn txt => BinIO.output (file, Byte.stringToBytes txt)) txts
-fun print_file c = File.open_output (fn F => print (output_list F) c)
+fun output_list file = List.app (fn txt => BinIO.output (file, Byte.stringToBytes txt))
+fun print_file c = File.open_output (fn F =>
+  (BinIO.output (F, Byte.stringToBytes "declare i8* @calloc(i64,i64)\n");
+   print (output_list F) c))
 fun codegen gen = print_file (gen (Nil,[],(0,1,0,Symtab.empty)))
 
 (*Debug*)

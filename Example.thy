@@ -27,10 +27,18 @@ text \<open>There are some options to enable a verbose printing giving details a
 text \<open>And this version gives an even more verbose printing.\<close>
 (* declare [[\<nu>trace_reasoning, \<nu>trace_reasoning_candicates, \<nu>trace_processing, \<nu>trace_application]]  *)
 
+
 proc sub1:  \<open>x \<tycolon> \<nat>[32]\<close> \<longmapsto> \<open>x - 1 \<tycolon> \<nat>[32]\<close>
   premises \<open>0 < x\<close>
   \<bullet> 1 -
-finish
+  finish
+
+thm sub1_\<nu>app
+thm sub1_\<nu>compilation
+
+term "if f_C then f_T else f_F"
+
+term "(v1,(v2,(v3,void)))"
 
 text \<open>The command `\<bullet>`  leads a construction statement, and the construction state by this statement is printed.
   You can insert command `\<bullet>` at any intermediate place to split it into two statements,
@@ -45,8 +53,9 @@ fun fib :: "nat \<Rightarrow> nat" where
 rec_proc Fib: \<open>i \<tycolon> \<nat>[32]\<close> \<longmapsto> \<open>fib i \<tycolon> \<nat>\<^sup>r[32]\<close> var i
     (* The (i \<tycolon> \<nat>\<^sup>r[32]) is the rounding abstraction which represents the integer \<open>i mod 2^32\<close>,
         so we do not need to consider the arithmetic overflow *)
-    \<bullet> \<rightarrow> i
-    \<bullet> i 1 \<le> if \<medium_left_bracket> \<open>1\<tycolon> \<nat>\<^sup>r[32]\<close> \<medium_right_bracket> \<medium_left_bracket>
+  \<bullet> \<rightarrow> i
+  \<bullet> i 1 \<le>
+  \<bullet> if  \<medium_left_bracket> \<open>1\<tycolon> \<nat>\<^sup>r[32]\<close> \<medium_right_bracket> \<medium_left_bracket>
     \<bullet> i 2 - Fib \<rightarrow> f2
     \<bullet> i 1 - Fib \<rightarrow> f1
     \<bullet> f1 f2 +
@@ -61,8 +70,9 @@ proc Fib2: \<open>i \<tycolon> \<nat>[32]\<close> \<longmapsto> \<open>fib i \<t
   \<bullet> \<rightarrow> i
   \<bullet> \<open>1\<tycolon> \<nat>\<^sup>r[32]\<close> 1
   \<bullet> i times y, y' \<open>\<lambda>i. y' = fib (Suc i) \<and> y = fib i\<close> \<medium_left_bracket> \<lambda>(y, y', i)
-  \<bullet>   y' y y' + 
-  \<bullet> \<medium_right_bracket> drop
+  \<bullet>   y' y y' +
+  \<bullet> \<medium_right_bracket>
+  \<bullet> drop
   finish
 
 \<nu>interface my_fib = Fib \<comment> \<open>To export the procedure Fib to an LLVM function with name my_fib.\<close>
@@ -79,10 +89,12 @@ proc bin_search:
   where ?index = "find_index (\<lambda>y. x \<le> y) xs"
   premises "length xs = len" and "sorted xs"
   \<bullet> \<rightarrow> ptr, len, x
-  \<bullet> len 0 while h, l always \<open>l \<le> ?index \<and> ?index \<le> h \<and> h \<le> len\<close>
+  \<bullet> len 0
+  \<bullet>  while h, l always \<open>l \<le> ?index \<and> ?index \<le> h \<and> h \<le> len\<close>
       \<comment> \<open>the \<open>always\<close> clause indicates the invariant\<close>
   \<bullet> \<medium_left_bracket> \<lambda>'(h, l) l h < \<medium_right_bracket> \<comment> \<open>The loop condition\<close>
   \<bullet> \<medium_left_bracket> \<lambda>(h, l) h l - 2 / l + \<rightarrow> m ptr m \<up> x < if \<medium_left_bracket> h m 1 + \<medium_right_bracket> \<medium_left_bracket> m l \<medium_right_bracket> \<medium_right_bracket> \<comment> \<open>The loop body\<close>
+    (* (h - l) / 2 + l \<rightarrow> m ;  if ( ptr[m] < x ) { h, m + 1 } { m, l }  *)
   \<bullet> drop
   finish
 (* The command \<rightarrow> assigns and moves stack elements to local values,
@@ -334,7 +346,212 @@ proc kmp:
   \<bullet> drop_array
   \<bullet> goal affirm unfolding first_substr_def using \<nu> apply auto
   by (metis add_mono_thms_linordered_field(2) antisym_conv1 dual_order.strict_trans1 less_diff_conv matches'_def) 
-finish
+  finish
+
+\<nu>interface kmp = kmp
+
+
+section \<open>Link List\<close>
+
+subsection \<open>Link List Library\<close>
+
+text \<open>Though still need a lot of proof engineering optimization,
+  recursive \<nu>-type like linked list is indeed supported.\<close>
+
+definition Separation' :: " heap set \<Rightarrow> heap set \<Rightarrow> heap set" (infixr "\<^emph>''" 70)
+  where "A \<^emph>' B = {h. (\<exists>h2 h1. h = h2 ++ h1 \<and> dom h2 \<perpendicular> dom h1 \<and> h1 \<in> A \<and> h2 \<in> B)}"
+
+function LinkLst :: " ('a::field,'b) \<nu> \<Rightarrow> (heap, (nat memaddr \<times> nat memaddr) \<R_arr_tail> 'b list) \<nu> "
+  where "LinkLst T ((a1,a2) \<R_arr_tail> []) = (if a1 = a2 then {Map.empty} else {})"
+    | "LinkLst T ((a1,a2) \<R_arr_tail> x#ls) = (\<exists>*a3. Ref \<lbrace> Pointer \<cross_product> T \<rbrace> (a1 \<R_arr_tail> (a3,x)) \<^emph>' LinkLst T ((a3,a2) \<R_arr_tail> ls))"
+  apply (metis map_tailrec_rev.elims object.exhaust old.prod.exhaust)
+  apply simp
+  apply fastforce
+  by fastforce
+termination
+  by (relation "measure (\<lambda>x. case x of (T, a2 \<R_arr_tail> ls) \<Rightarrow> length ls)") auto
+
+lemma LinkLst_alt:
+    "\<tort_lbrace> (as,at) \<R_arr_tail> [] \<tycolon> LinkLst T\<tort_rbrace> = (if as = at then {Map.empty} else {})"
+    "\<tort_lbrace> (as,at) \<R_arr_tail> x#ls \<tycolon> LinkLst T\<tort_rbrace> = (\<exists>* a2. (as \<R_arr_tail> (a2,x), (a2,at) \<R_arr_tail> ls) \<tycolon> Ref \<lbrace> Pointer \<cross_product> T \<rbrace> \<^emph> LinkLst T)"
+  unfolding RepSet_def by (simp_all add: HeapSeparation_def Separation'_def Ref_def Refining_def) 
+
+declare LinkLst.simps[simp del]
+
+text \<open>Then we prove casts between refinement levels. The proofs are almost automatic.\<close>
+
+lemma open_linklst_\<nu>app:
+  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t OBJ (as,at) \<R_arr_tail> x#ls \<tycolon> LinkLst T \<longmapsto> (\<exists>* a2. as \<R_arr_tail> (a2,x) \<tycolon> Ref \<lbrace> Pointer \<cross_product> T \<rbrace> \<heavy_asterisk> (a2,at) \<R_arr_tail> ls \<tycolon> LinkLst T)"
+  unfolding Cast_def LinkLst_alt SepNu_to_SepSet by (auto simp add: nu_exps)
+
+lemma open_linklst'_\<nu>app:
+  "\<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e ls \<noteq> [] \<Longrightarrow>
+  \<^bold>c\<^bold>a\<^bold>s\<^bold>t OBJ (as,at) \<R_arr_tail> ls \<tycolon> LinkLst T \<longmapsto> (as \<R_arr_tail> (a2,x) \<tycolon> Ref \<lbrace> Pointer \<cross_product> T \<rbrace> \<heavy_asterisk> (a2,at) \<R_arr_tail> ls' \<tycolon> LinkLst T \<^bold>s\<^bold>u\<^bold>b\<^bold>j a2 x ls'. ls = x # ls')"
+  unfolding Cast_def SepNu_to_SepSet by (cases ls) (auto simp add: nu_exps LinkLst_alt)
+
+lemma close_linklst_\<nu>app:
+  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t a \<R_arr_tail> (a2,x) \<tycolon> Ref \<lbrace> Pointer \<cross_product> T \<rbrace> \<heavy_asterisk> (a2,at) \<R_arr_tail> ls \<tycolon> LinkLst T \<longmapsto> OBJ (a,at) \<R_arr_tail> x#ls \<tycolon> LinkLst T"
+  unfolding Cast_def LinkLst_alt SepNu_to_SepSet by (auto simp add: nu_exps) blast
+
+lemma empty_linklst_\<nu>app:
+  "\<^bold>p\<^bold>a\<^bold>r\<^bold>a\<^bold>m a \<Longrightarrow> \<^bold>c\<^bold>a\<^bold>s\<^bold>t R \<longmapsto> R \<heavy_asterisk> (a,a) \<R_arr_tail> [] \<tycolon> LinkLst T"
+  unfolding Cast_def LinkLst_alt SepNu_to_SepSet by (auto simp add: nu_exps)
+
+text \<open>By using casts proved above, operations of linked list are verified almost automatically.\<close>
+
+rec_proc get_linklst_at_i[\<nu>overload \<up>]:
+  argument \<open>(a,at) \<R_arr_tail> l \<tycolon> LinkLst T \<heavy_asterisk> a \<tycolon> Pointer \<heavy_asterisk> i \<tycolon> \<nat>[size_t]\<close>
+  return \<open>(a,at) \<R_arr_tail> l \<tycolon> LinkLst T \<heavy_asterisk> l!i \<tycolon> T\<close>
+  var i a l
+  premises \<open>i < length l\<close>
+  \<bullet> \<rightarrow> ptr, i
+  \<bullet> open_linklst'
+  \<bullet> i 0 = if \<medium_left_bracket> ptr \<up>: 2 \<medium_right_bracket> \<medium_left_bracket> ptr \<up>: 1 i 1 - get_linklst_at_i \<medium_right_bracket> \<rightarrow> ret
+  \<bullet> close_linklst ret
+  finish
+
+lemma [simp]: "(if P then (a, x1) else (a,x2)) = (a, if P then x1 else x2)" by simp
+
+rec_proc updt_linklst_at[\<nu>overload \<down>]:
+  argument \<open>(a,at) \<R_arr_tail> l \<tycolon> LinkLst T \<heavy_asterisk> a \<tycolon> Pointer \<heavy_asterisk> i \<tycolon> \<nat>[size_t] \<heavy_asterisk> x \<tycolon> T\<close>
+  return \<open>(a,at) \<R_arr_tail> l[i:=x] \<tycolon> LinkLst T\<close>
+  var i a l
+  premises \<open>i < length l\<close>
+  \<bullet> \<rightarrow> ptr, i, x
+  \<bullet> open_linklst'
+  \<bullet> i 0 = if \<medium_left_bracket> ptr x \<down>:  2 \<medium_right_bracket> \<medium_left_bracket> ptr \<up>: 1 i 1 - x updt_linklst_at \<medium_right_bracket>
+  \<bullet> close_linklst
+    goal affirm using \<nu> by (smt (z3) Suc_diff_1 list_update_code(2) list_update_code(3) neq0_conv) 
+  finish
+
+proc pop_linklst[\<nu>overload pop]:
+  argument \<open>(a,at) \<R_arr_tail> l \<tycolon> LinkLst T \<heavy_asterisk> a \<tycolon> Pointer\<close>
+  return \<open>\<exists>*a2. (a2,at) \<R_arr_tail> tl l \<tycolon> LinkLst T \<heavy_asterisk> a \<R_arr_tail> (a2, hd l) \<tycolon> Ref \<lbrace> Pointer \<cross_product> T \<rbrace> \<heavy_asterisk> a2 \<tycolon> Pointer \<close>
+  premises \<open>l \<noteq> []\<close>
+  \<bullet> \<rightarrow> ptr open_linklst' ptr \<up>: 1
+  finish
+
+lemma push_linklst_\<nu>app[\<nu>overload push]:
+  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t (a2,at) \<R_arr_tail> l \<tycolon> LinkLst T \<heavy_asterisk> a \<R_arr_tail> (a2, x) \<tycolon> Ref \<lbrace> Pointer \<cross_product> T \<rbrace> \<longmapsto> ELE (a,at) \<R_arr_tail> x#l \<tycolon> LinkLst T"
+  unfolding LinkLst_alt(2) Cast_def
+  by (auto simp add: nu_exps) (meson disjoint_def disjoint_rewR map_add_comm) 
+
+proc prepend_linklst:
+  argument \<open>(a,at) \<R_arr_tail> l \<tycolon> LinkLst T \<heavy_asterisk> a \<tycolon> Pointer \<heavy_asterisk> x \<tycolon> T\<close>
+  return \<open>\<exists>*a2. (a2,at) \<R_arr_tail> x#l \<tycolon> LinkLst T \<heavy_asterisk> a2 \<tycolon> Pointer \<close>
+  for T :: "('a::{field,zero},'b) \<nu>"
+  requires [\<nu>reason on \<open>\<nu>Zero T ?t0\<close>]: \<open>\<nu>Zero T t0\<close>
+  \<bullet> \<rightarrow> ptr, x
+  \<bullet> alloc \<open>\<lbrace> Pointer \<cross_product> T \<rbrace>\<close> \<rightarrow> p2
+  \<bullet> p2 ptr \<down>: 1
+  \<bullet> p2 x \<down>: 2
+  \<bullet> close_linklst
+  \<bullet> p2
+  finish
+
+rec_proc split_linklst_at[\<nu>overload split]:
+  argument \<open>(a,at) \<R_arr_tail> l \<tycolon> LinkLst T \<heavy_asterisk> a \<tycolon> Pointer \<heavy_asterisk> n \<tycolon> \<nat>[size_t]\<close>
+  return \<open>\<exists>*a2. (a2,at) \<R_arr_tail> drop n l \<tycolon> LinkLst T \<heavy_asterisk> (a,a2) \<R_arr_tail> take n l \<tycolon> LinkLst T \<heavy_asterisk> a2 \<tycolon> Pointer\<close>
+  var a l n
+  premises \<open>n \<le> length l\<close>
+  \<bullet> \<rightarrow> ptr, n
+  obtain y l' where [simp]: "n \<noteq>0 \<Longrightarrow> l = y#l'" using \<nu> by (cases l) auto
+  \<bullet> n 0 = if \<medium_left_bracket> empty_linklst a ptr
+      as' \<open>\<^bold>(\<exists>* a2. (a2,at) \<R_arr_tail> drop n l \<tycolon> LinkLst T \<heavy_asterisk> (a,a2) \<R_arr_tail> take n l \<tycolon> LinkLst T \<heavy_asterisk> a2 \<tycolon> Pointer \<^bold>)\<close> \<medium_right_bracket>
+  \<bullet> \<medium_left_bracket> open_linklst ptr \<up>: 1 n 1 - split_linklst_at close_linklst \<medium_right_bracket>
+  note drop_Cons'[simp] take_Cons'[simp]
+  finish
+
+
+lemma merge_linklst[\<nu>overload merge]:
+  "\<^bold>c\<^bold>a\<^bold>s\<^bold>t (a2,at) \<R_arr_tail> l2 \<tycolon> LinkLst T \<heavy_asterisk> (a,a2) \<R_arr_tail> l1 \<tycolon> LinkLst T \<longmapsto> ELE (a,at) \<R_arr_tail> l1@l2 \<tycolon> LinkLst T"
+  by (induct l1 arbitrary: a, auto simp add: nu_exps Cast_def LinkLst_alt pair_forall)
+    (smt (z3) Un_iff disjoint_def disjoint_rewL dom_map_add map_add_assoc map_add_comm)
+
+
+subsection \<open>Demos using linked list\<close>
+
+text \<open>Note the code body of the bin_search is not modified at all, because
+  we overload linked list operation and plain array operation on the same symbol.
+  Only the \<nu>-type in the specification is changed.\<close>
+
+proc bin_search':
+  argument \<open>ptr \<tycolon> Pointer \<heavy_asterisk> len \<tycolon> \<nat>[size_t] \<heavy_asterisk> x \<tycolon> \<nat>['b::len] \<heavy_asterisk> (ptr,pt) \<R_arr_tail> xs \<tycolon> LinkLst \<nat>['b]\<close>
+  return \<open>?index \<tycolon> \<nat>[size_t] \<heavy_asterisk> (ptr,pt) \<R_arr_tail> xs \<tycolon> LinkLst \<nat>['b]\<close>
+  where ?index = "find_index (\<lambda>y. x \<le> y) xs"
+  premises "length xs = len" and "sorted xs"
+  \<bullet> \<rightarrow> ptr, len, x
+  \<bullet> len 0
+  \<bullet>  while h, l always \<open>l \<le> ?index \<and> ?index \<le> h \<and> h \<le> len\<close>
+      \<comment> \<open>the \<open>always\<close> clause indicates the invariant\<close>
+  \<bullet> \<medium_left_bracket> \<lambda>'(h, l) l h < \<medium_right_bracket> \<comment> \<open>The loop condition\<close>
+  \<bullet> \<medium_left_bracket> \<lambda>(h, l) h l - 2 / l + \<rightarrow> m ptr m \<up>  x < if \<medium_left_bracket> h m 1 + \<medium_right_bracket> \<medium_left_bracket> m l \<medium_right_bracket> \<medium_right_bracket> \<comment> \<open>The loop body\<close>
+    (* (h - l) / 2 + l \<rightarrow> m ;  if ( ptr[m] < x ) { h, m + 1 } { m, l }  *)
+  \<bullet> drop
+  finish
+
+
+\<nu>interface bin_search2 = bin_search' : \<open>32 word \<times> size_t word \<times> memptr\<close> \<longmapsto> \<open>size_t word\<close>
+
+proc swap':
+  argument \<open>(ptr, pt) \<R_arr_tail> xs \<tycolon> LinkLst \<nat>[32] \<heavy_asterisk> ptr \<tycolon> Pointer \<heavy_asterisk> i \<tycolon> \<nat>[size_t] \<heavy_asterisk> j \<tycolon> \<nat>[size_t]\<close>
+  return \<open>(ptr, pt) \<R_arr_tail> xs[i := xs ! j, j := xs ! i] \<tycolon> LinkLst \<nat>[32]\<close>
+  premises \<open>i < length xs\<close> and \<open>j < length xs\<close>
+  \<bullet> \<rightarrow> ptr, i, j ptr i \<up>\<rightarrow> i' ptr j \<up> \<rightarrow> j' ptr i j' \<down> ptr j i' \<down>
+  finish
+
+proc partition':
+  argument \<open>(ptr, pt) \<R_arr_tail> xs \<tycolon> LinkLst \<nat>[32] \<heavy_asterisk> ptr \<tycolon> Pointer \<heavy_asterisk> n \<tycolon> \<nat>[size_t]\<close>
+  return \<open>(ptr, pt) \<R_arr_tail> ys \<tycolon> LinkLst \<nat>[32] \<heavy_asterisk> j \<tycolon> \<nat>[size_t]
+      \<^bold>s\<^bold>u\<^bold>b\<^bold>j j ys. j < length xs \<and> permuted ys xs \<and>
+          (\<forall>k. k < j \<longrightarrow> ys ! k \<le> ys ! j) \<and> (\<forall>k. j < k \<and> k < n \<longrightarrow> ys ! j < ys ! k)\<close>
+  premises \<open>length xs = n\<close> and \<open>0 < n\<close>
+  note nth_list_update[simp] not_le[simp] perm_length[simp]
+
+  \<bullet> -- ptr, n 1 - \<up> \<rightarrow> pivot
+  \<bullet> \<open>0 \<tycolon> \<nat>[size_t]\<close> n 1 - times var j, ys in "(ptr,pt) \<R_arr_tail> ys", j
+  \<bullet> \<open>\<lambda>i. j \<le> i \<and> permuted ys xs \<and> (ys ! (n-1) = ?pivot) \<and>
+    (\<forall>k. k < j \<longrightarrow> ys ! k \<le> ?pivot) \<and> (\<forall>k. j \<le> k \<and> k < i \<longrightarrow> ?pivot < ys ! k)\<close> \<medium_left_bracket> \<lambda>(j,i)
+  \<bullet> ptr j \<up>\<rightarrow> j'  ptr i \<up> -- i' pivot \<le> if \<medium_left_bracket> ptr i j' \<down> ptr j i' \<down> j 1 + \<medium_right_bracket> \<medium_left_bracket> j \<medium_right_bracket>
+  \<bullet> goal affirm using \<nu> by (auto simp add: less_Suc_eq intro!: perm_swap[THEN perm.trans])
+  \<bullet> \<medium_right_bracket>
+  have [useful]: "j < n" using \<nu> by linarith
+  \<bullet> \<rightarrow> j ptr j n 1 - swap' j
+  \<bullet> goal affirm using \<nu> by (smt (z3) Suc_diff_1 Suc_leI diff_less leD length_list_update
+        less_numeral_extra(1) less_or_eq_imp_le mset_eq_perm mset_swap nat_neq_iff nth_list_update_eq
+         nth_list_update_neq perm_length)
+    (*Albeit it is long, it is generated by sledgehammer fully-automatically!
+    Actually `auto intro!: perm_swap[THEN perm.trans]` should has been enough to solve this,
+    however I do not know why it is stuck at some simple condition.*)
+  finish
+
+
+rec_proc qsort':
+  argument \<open>(ptr,pt) \<R_arr_tail> xs \<tycolon> LinkLst \<nat>[32] \<heavy_asterisk> ptr \<tycolon> Pointer \<heavy_asterisk> n \<tycolon> \<nat>[size_t]\<close>
+  return \<open>(ptr,pt) \<R_arr_tail> ys \<tycolon> LinkLst \<nat>[32] \<^bold>s\<^bold>u\<^bold>b\<^bold>j ys. sorted ys \<and> permuted ys xs\<close>
+  var ptr pt xs n
+  premises "n = length xs"
+  note perm_length[simp]
+
+  \<bullet> -- ptr, n 0 = if \<medium_left_bracket> drop \<medium_right_bracket> \<medium_left_bracket> n partition' \<rightarrow> j
+  let ?pivot = "ys ! j" have a1[simp]: " hd (drop j ys) = ?pivot " using \<nu> by (metis hd_drop_conv_nth perm_length)
+
+  \<bullet> ptr j split pop_linklst n 1 - j - qsort' \<exists>high
+      \<comment> \<open>the annotation '\<exists>high' indicates the name of  the existential quantified variable to be instantiated\<close>
+  \<bullet> ptr j qsort' \<exists>low
+  \<bullet> push_linklst
+  \<bullet> merge_linklst
+
+  \<bullet> !! subj \<open>low @ ?pivot # high <~~> xs \<and> sorted (low @ ?pivot # high)\<close> affirm unfolding sorted_append using \<nu>
+  by (auto simp add: perm_set_eq in_set_conv_nth nth_tl Suc_eq_plus1)
+     (metis (no_types, hide_lams) \<nu>lemmata(1) a1 append_take_drop_id cons_perm_eq drop_all_iff dual_order.strict_trans1
+      list.collapse not_less_iff_gr_or_eq perm.trans perm_append1 perm_append2 perm_length add.left_commute add1_le_eq le_add2 le_less_trans less_diff_conv less_or_eq_imp_le)+
+
+  \<bullet> \<medium_right_bracket>
+  finish
+
+\<nu>interface my_qsort2 = qsort'
+
 
 section\<open>Ending\<close>
 

@@ -4,7 +4,7 @@ begin
 
 subsection \<open>Basic sequential instructions\<close>
 
-definition op_crash :: "('x::stack) \<longmapsto> ('y::stack)" where "op_crash _ = PartialCorrect"
+(* definition op_crash :: "('x::stack) \<longmapsto> ('y::stack)" where "op_crash _ = PartialCorrect" *)
 
 definition op_drop :: "('a::lrep) \<times> ('r::stack) \<longmapsto> 'r" where
   "op_drop x = (case x of (h,a,r) \<Rightarrow> Success (h,r))"
@@ -104,10 +104,10 @@ definition op_equal :: " 'a itself \<Rightarrow> ('a::{ceq,lrep}) \<times> 'a \<
 
 section \<open>Tuple Operations\<close>
 
-definition cons_tup :: " 'a itself \<Rightarrow> ('a::field_list) \<times> ('r::stack) \<longmapsto> 'a tuple \<times> 'r"
+definition cons_tup :: " 'a itself \<Rightarrow> ('a::field) \<times> ('r::stack) \<longmapsto> 'a tuple \<times> 'r"
   where "cons_tup _ = (\<lambda>(h,a,r). Success (h, Tuple a, r))"
 
-definition op_dest_tup :: " 'a itself \<Rightarrow> ('a::field_list) tuple \<times> ('r::stack) \<longmapsto> 'a \<times> 'r"
+definition op_dest_tup :: " 'a itself \<Rightarrow> ('a::field) tuple \<times> ('r::stack) \<longmapsto> 'a \<times> 'r"
   where "op_dest_tup _ s = (case s of (h,Tuple a, r) \<Rightarrow> Success (h,a,r))"
 
 definition op_get_tuple :: "('a tuple,'a tuple,'x,'x) index \<Rightarrow> 'a itself \<Rightarrow> 'a tuple \<times> ('r::stack) \<longmapsto> ('x::lrep) \<times> 'r"
@@ -119,7 +119,7 @@ definition op_set_tuple ::
 
 section \<open>Field Index\<close>
 
-definition index_tuple :: "(('a::field_list),('b::field_list),'x,'y) index \<Rightarrow> ('a tuple, 'b tuple, 'x, 'y) index"
+definition index_tuple :: "(('a::field),('b::field),'x,'y) index \<Rightarrow> ('a tuple, 'b tuple, 'x, 'y) index"
   where "index_tuple adr = (case adr of Index g m \<Rightarrow> Index (case_tuple g) (map_tuple o m))"
 
 section \<open>Memory & Pointer Operations\<close>

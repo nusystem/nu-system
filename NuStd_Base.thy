@@ -515,7 +515,7 @@ proc while: \<open>X'\<close> :: "'s::stack" \<longmapsto> \<open>X x \<^bold>s\
     and Cond_\<nu>app: "\<forall>x. \<^bold>p\<^bold>r\<^bold>o\<^bold>c (Cond :: 's::stack \<longmapsto> 1 word \<times> 's) \<blangle> X x \<longmapsto> X x' \<heavy_asterisk> cond x' \<tycolon> \<bool> \<^bold>s\<^bold>u\<^bold>b\<^bold>j x'. True\<brangle>"
     and Body_\<nu>app: "\<forall>x. \<^bold>p\<^bold>r\<^bold>e\<^bold>m\<^bold>i\<^bold>s\<^bold>e cond x \<longrightarrow> \<^bold>p\<^bold>r\<^bold>o\<^bold>c (Body :: 's \<longmapsto> 's) \<blangle> X x \<longmapsto> X x' \<^bold>s\<^bold>u\<^bold>b\<^bold>j x'. True \<brangle>"
   \<bullet> Cond if \<medium_left_bracket> do_while var x' \<open>cond x'\<close> \<medium_left_bracket> Body Cond \<medium_right_bracket> subj \<open>\<not> cond x'\<close> \<medium_right_bracket>
-  \<bullet> \<medium_left_bracket> generalize \<open>x'\<close> x' \<open>\<lambda>x'. \<not> cond x'\<close> \<medium_right_bracket>
+  \<bullet> \<medium_left_bracket> generalize' \<open>x'\<close> x' \<open>\<lambda>x'. \<not> cond x'\<close> \<medium_right_bracket>
   finish
 
 subsubsection \<open>recursion\<close>
@@ -759,27 +759,29 @@ subsection \<open>Tuple Operations\<close>
 subsubsection \<open>Construction & Destruction\<close>
 
 theorem tup_\<nu>app:
-    "\<^bold>p\<^bold>r\<^bold>o\<^bold>c cons_tup TYPE('a::field_list) \<blangle> x \<tycolon> X \<longmapsto> x \<tycolon> \<lbrace> X \<rbrace>  \<brangle>"
-  for X :: "('a::field_list, 'ax) \<nu>"
+    "\<^bold>p\<^bold>r\<^bold>o\<^bold>c cons_tup TYPE('a::field) \<blangle> x \<tycolon> X \<longmapsto> x \<tycolon> \<lbrace> X \<rbrace>  \<brangle>"
+  for X :: "('a::field, 'ax) \<nu>"
   unfolding cons_tup_def Procedure_def by (simp add: pair_forall nu_exps)
 
 theorem det_\<nu>app:
-    "\<^bold>p\<^bold>r\<^bold>o\<^bold>c op_dest_tup TYPE('a::field_list) \<blangle> x \<tycolon> \<lbrace> X \<rbrace> \<longmapsto> x \<tycolon> X \<brangle>"
-  for X :: "('a::field_list, 'ax) \<nu>"
+    "\<^bold>p\<^bold>r\<^bold>o\<^bold>c op_dest_tup TYPE('a::field) \<blangle> x \<tycolon> \<lbrace> X \<rbrace> \<longmapsto> x \<tycolon> X \<brangle>"
+  for X :: "('a::field, 'ax) \<nu>"
   unfolding Procedure_def op_dest_tup_def by (simp add: tuple_forall pair_forall nu_exps)
 
 subsubsection \<open>Field Accessing\<close>
 
-lemma
-  "\<^bold>i\<^bold>n\<^bold>d\<^bold>e\<^bold>x idx \<blangle> X \<^bold>@ A \<brangle> \<Longrightarrow>
-    \<^bold>p\<^bold>r\<^bold>o\<^bold>c op_get_tuple idx TYPE('a::field_list) \<blangle> VAL A \<longmapsto> VAL X \<brangle> "
-  for A :: " 'a::field_list tuple set"
-  unfolding \<nu>index_def \<nu>def pair_forall op_get_tuple_def tuple_forall
+term \<open>FieldIndex\<close>
+
+lemma get_\<nu>app:
+  "FieldIndex idx Y X g m \<Longrightarrow>
+    \<^bold>p\<^bold>r\<^bold>o\<^bold>c op_get_tuple idx TYPE('a::field) \<blangle> VAL x \<tycolon> X \<longmapsto> VAL g x \<tycolon> Y \<brangle> "
+  for A :: " 'a::field tuple set"
+  unfolding \<nu>index_def \<nu>def pair_forall op_get_tuple_def tuple_forall FieldIndex_def
   by (simp add: nu_exps)
 
 lemma "\<^bold>i\<^bold>n\<^bold>d\<^bold>e\<^bold>x idx \<blangle> X \<^bold>@ A \<longmapsto> Y \<^bold>@ B \<brangle> \<Longrightarrow>
-  \<^bold>p\<^bold>r\<^bold>o\<^bold>c op_set_tuple idx TYPE('a::field_list) TYPE('y::lrep) \<blangle> VAL A \<heavy_asterisk> VAL Y \<longmapsto> VAL B \<brangle> "
-  for A :: "'a::field_list tuple set" and Y :: "'y::lrep set"
+  \<^bold>p\<^bold>r\<^bold>o\<^bold>c op_set_tuple idx TYPE('a::field) TYPE('y::lrep) \<blangle> VAL A \<heavy_asterisk> VAL Y \<longmapsto> VAL B \<brangle> "
+  for A :: "'a::field tuple set" and Y :: "'y::lrep set"
   unfolding \<nu>index_def \<nu>def pair_forall op_set_tuple_def
   by (simp add: nu_exps)
 

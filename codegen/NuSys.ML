@@ -76,18 +76,20 @@ fun op_recursion_gen name arg ret gen =
       op_call_gen arg ret (def_func name arg ret (gen (op_call_gen arg ret (pair name))))
 
 (* Memory *)
-fun GEP T idx = binop' (expr_idx idx) ("getelementptr " ^ tystr T ^ ", ") (T_PTR T) SizeT
+fun GEP T idx = binop' (expr_idx_t idx) ("getelementptr " ^ tystr T ^ ", ") (T_PTR T) SizeT
 fun ptrcast T = bitcast T_ptr (T_PTR T)   ;   fun ptrcast' T = bitcast (T_PTR T) T_ptr
 fun op_shift_pointer_gen T = pop (fn Sd => ptrcast T #> push Sd #> GEP T [] #> ptrcast' T)
 
-fun size_of_gen T = expr (put "getelementptr " #> putt T #> put "* null, i32 1\n") #> ptr2size_t T
+fun size_of_gen T = expr (put "getelementptr i64, " #> putt T #> put "* null, i64 1\n") #> ptr2size_t T
 
 fun op_alloc_gen T = pop (fn A0 => size_of_gen T #> push A0)
       #> op_call_gen (SizeT <%> SizeT <%> T_nil) T_ptr (pair "calloc")
 
 (*U: type of the element to be loaded; T: type of the aggregate.*)
-fun op_load_gen  U T idx = ptrcast T #> monop' (expr_idx idx) ("load " ^ tystr U ^ ", ") (T_PTR T)
-fun op_store_gen U T idx = swap #> ptrcast T #> binop' (expr_idx' idx) "store " U (T_PTR T)
+fun op_load_gen  U T idx = ptrcast T #> push (Literal "0") #> GEP T idx
+  #> monop' expr ("load " ^ tystr U ^ ", ") (T_PTR U)
+fun op_store_gen U T idx = swap #> ptrcast T #> push (Literal "0") #> GEP T idx
+  #> binop' I "store " U (T_PTR U)
 
 fun Prog_Interface_gen name X Y G = def_func name X Y G #> snd
 
